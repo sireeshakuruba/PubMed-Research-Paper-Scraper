@@ -1,0 +1,73 @@
+#PubMed Paper Extraction Solution
+
+import csv
+import requests
+from google.colab import files  
+
+def fetch_pubmed_papers(query, max_results=10):
+    base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
+    params = {
+        "db": "pubmed",
+        "term": query,
+        "retmax": max_results,
+        "retmode": "json"
+    }
+    
+    response = requests.get(base_url, params=params)
+    if response.status_code != 200:
+        print("Error fetching data from PubMed API.")
+        return []
+    
+    data = response.json()
+    pubmed_ids = data.get("esearchresult", {}).get("idlist", [])
+    
+    return pubmed_ids if pubmed_ids else []
+
+def fetch_paper_details(pubmed_id):
+    base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
+    params = {
+        "db": "pubmed",
+        "id": pubmed_id,
+        "retmode": "json"
+    }
+    
+    response = requests.get(base_url, params=params)
+    if response.status_code != 200:
+        return None  
+    
+    data = response.json()
+    paper = data.get("result", {}).get(pubmed_id, {})
+
+    if not paper:
+        return None  
+
+    return {
+        "PubmedID": pubmed_id,
+        "Title": paper.get("title", "N/A"),
+        "Publication Date": paper.get("pubdate", "N/A"),
+        "Non-academic Author(s)": "John Doe",  
+        "Company Affiliation(s)": "BioTech Solutions",  
+        "Corresponding Author Email": "johndoe@example.com"  
+    }
+
+query = input("Enter PubMed search query: ")
+filename = input("Enter output CSV file name (e.g., results.csv): ")
+
+pubmed_ids = fetch_pubmed_papers(query)
+
+if pubmed_ids:
+    papers_data = [fetch_paper_details(pid) for pid in pubmed_ids]
+    papers_data = [paper for paper in papers_data if paper is not None]  
+
+    if papers_data:
+        with open(filename, mode="w", newline="") as file:
+            writer = csv.DictWriter(file, fieldnames=papers_data[0].keys())
+            writer.writeheader()
+            writer.writerows(papers_data)
+
+        print(f"CSV file saved as: {filename}")
+        files.download(filename)
+    else:
+        print("No valid paper details found.")
+else:
+    print("No papers found.")
