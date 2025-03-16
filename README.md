@@ -19,7 +19,7 @@ Installation
 
 Clone the repository:
 
-git clone https://github.com/yourusername/pubmed-scraper.git
+git clone https://github.com/sireeshakuruba/PubMed-Research-Paper-Scraper/blob/main/PubMed%20Paper%20Extraction%20Solution.txt
 cd pubmed-scraper
 
 Install required dependencies:
